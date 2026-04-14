@@ -91,16 +91,41 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 .tip a:hover::after{transform:scaleX(1);}
 
 /* ── Step 2 header with buttons ── */
-.step2-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
-.step2-header .label{flex:1;}
-.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.step2-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;flex-wrap:wrap;row-gap:10px;}
+.step2-header .label{flex:1;min-width:120px;padding-top:10px;}
+.step2-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+.step2-buttons{display:flex;align-items:center;gap:10px;}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
+#convertBtn{min-width:108px;}
+#saveBtn{min-width:108px;}
 .btn-primary{background:var(--accent);color:#fff;}
 .btn-primary:hover:not(:disabled){filter:brightness(1.12);}
 .btn-primary:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed;}
 .btn-success{background:rgba(74,222,138,.13);color:var(--success);border:1px solid rgba(74,222,138,.22);}
 .btn-success:hover:not(:disabled){background:rgba(74,222,138,.22);}
 .btn-success:disabled{opacity:.35;cursor:not-allowed;}
-.counter{font-size:12px;color:var(--muted);white-space:nowrap;}
+.btn-hidden{visibility:hidden;pointer-events:none;}
+.counter{font-size:12px;color:var(--muted);white-space:nowrap;min-height:16px;}
+
+.step2-buttons{display:flex;align-items:center;gap:10px;}
+@media(max-width:600px){
+  .wrap{padding:24px 16px;}
+  header{margin-bottom:20px;}
+  h1{font-size:18px;}
+  h1 span{font-size:12px;}
+  .card{padding:16px;}
+  .step2-header{flex-direction:column;align-items:flex-start;}
+  .step2-actions{width:100%;}
+  .step2-buttons{width:100%;flex-direction:column;}
+  #convertBtn,#saveBtn{width:100%;}
+  .mode-switch{width:100%;display:flex;}
+  .mode-opt{flex:1;justify-content:center;}
+  .col-select-row{flex-direction:column;align-items:flex-start;}
+  .rows-table th:nth-child(2),.rows-table td:nth-child(2){display:none;}
+  .url-results-wrap th:nth-child(2),.url-results-wrap td:nth-child(2){display:none;}
+}
+
+/* ── Progress (legacy, unused) ── */
 
 /* ── Drop zone ── */
 .drop-zone{
@@ -151,7 +176,6 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 .dot-err{background:var(--error);}
 .dot-wait{background:var(--muted);}
 .dot-spin{border:1.5px solid var(--muted);border-top-color:var(--accent);border-radius:50%;display:inline-block;width:8px;height:8px;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px;}
-
 /* ── Mode switch ── */
 .mode-switch{display:inline-flex;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:3px;gap:3px;margin-bottom:16px;}
 .mode-opt{padding:6px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .18s;display:flex;align-items:center;gap:6px;}
@@ -170,7 +194,6 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 .url-results-wrap th{background:var(--surface2);padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--border);}
 .url-results-wrap td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .url-results-wrap tr:last-child td{border-bottom:none;}
-
 /* ── Copy button ── */
 .copy-btn{
   padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;
@@ -191,6 +214,7 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   100%{transform:scale(1) rotate(0deg);opacity:1;}
 }
 @keyframes spin{to{transform:rotate(360deg);}}
+
 </style>
 </head>
 <body>
@@ -233,15 +257,19 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 <div class="card">
   <div class="step2-header">
     <span class="label" id="step2Label">Step 2 — 拖入 Excel 檔案</span>
-    <button class="btn btn-primary" id="convertBtn" onclick="startConvert()" disabled>
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6-2.686-6-6-6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M5 2L2 5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      執行轉換
-    </button>
-    <button class="btn btn-success" id="saveBtn" onclick="saveExcel()" disabled>
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M4 8l4 4 4-4M3 13h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      儲存 Excel
-    </button>
-    <span class="counter" id="counter"></span>
+    <div class="step2-actions">
+      <div class="step2-buttons">
+        <button class="btn btn-success" id="saveBtn" onclick="saveExcel()" disabled>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M4 8l4 4 4-4M3 13h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          儲存 Excel
+        </button>
+        <button class="btn btn-primary" id="convertBtn" onclick="startConvert()" disabled>
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6-2.686-6-6-6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M5 2L2 5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          執行轉換
+        </button>
+      </div>
+      <span class="counter" id="counter"></span>
+    </div>
   </div>
 
   <!-- Mode switch -->
@@ -290,7 +318,9 @@ function switchMode(mode){
   document.getElementById('urlPanel').style.display=mode==='url'?'block':'none';
   document.getElementById('excelPanel').style.display=mode==='excel'?'block':'none';
   document.getElementById('step2Label').textContent=mode==='url'?'Step 2 — 輸入網址清單':'Step 2 — 拖入 Excel 檔案';
-  document.getElementById('saveBtn').style.display=mode==='url'?'none':'flex';
+  // save btn: url mode shows export, excel mode keeps as is
+  document.getElementById('saveBtn').classList.toggle('btn-hidden', mode==='url');
+  // convert btn always enabled in url mode
   if(mode==='url') document.getElementById('convertBtn').disabled=false;
   else document.getElementById('convertBtn').disabled=!wb;
   document.getElementById('counter').textContent='';
@@ -310,8 +340,11 @@ let step1Open=true;
 function toggleStep1(){
   step1Open=!step1Open;
   const body=document.getElementById('step1Body');
+  const btn=document.getElementById('step1ColBtn');
+  const arr=document.getElementById('step1Arr');
   body.classList.toggle('closed',!step1Open);
-  document.getElementById('step1ColBtn').innerHTML=`<span class="arr" id="step1Arr">${step1Open?'▾':'▸'}</span> ${step1Open?'收合':'展開'}`;
+  arr.textContent=step1Open?'▾':'▸';
+  btn.innerHTML=`<span class="arr" id="step1Arr">${step1Open?'▾':'▸'}</span> ${step1Open?'收合':'展開'}`;
 }
 
 /* ── State ── */
@@ -335,16 +368,22 @@ function loadFile(file){
     jsonData=XLSX.utils.sheet_to_json(wb.Sheets[wsName],{defval:''});
     if(!jsonData.length){alert('此檔案沒有資料列');return;}
     headers=Object.keys(jsonData[0]);
+    // ensure shortColName doesn't collide
     shortColName='短網址';
     if(headers.includes(shortColName)) shortColName='短網址_reurl';
+
+    // auto-detect URL column
     urlColIdx=0;
     for(let i=0;i<headers.length;i++){
       const s=String(jsonData[0][headers[i]]||'');
       if(s.startsWith('http://')||s.startsWith('https://')){urlColIdx=i;break;}
     }
+
+    // show data area
     document.getElementById('dropArea').style.display='none';
     document.getElementById('dataArea').style.display='block';
     document.getElementById('convertBtn').disabled=false;
+
     renderFileInfo(file);
     renderColSelect();
     renderAllRows();
@@ -376,7 +415,10 @@ function renderColSelect(){
     <select id="shortColSelect" onchange="onShortColChange()">${scOptions}</select>`;
 }
 
-function onColChange(){urlColIdx=parseInt(document.getElementById('colSelect').value);renderAllRows();}
+function onColChange(){
+  urlColIdx=parseInt(document.getElementById('colSelect').value);
+  renderAllRows();
+}
 function onShortColChange(){
   const v=parseInt(document.getElementById('shortColSelect').value);
   shortColName=v===0?'短網址':headers[v-1];
@@ -384,9 +426,14 @@ function onShortColChange(){
   renderAllRows();
 }
 
+/* ── Render all rows dynamically (no fixed height) ── */
 function renderAllRows(){
   const urlCol=headers[urlColIdx];
+  // visible columns: url col + up to 2 other cols + short col
   const others=headers.filter((_,i)=>i!==urlColIdx).slice(0,2);
+  const visCols=[...others,urlCol];
+
+  // header
   let thead='<tr>';
   thead+=`<th style="width:40px">#</th>`;
   others.forEach(h=>thead+=`<th>${esc(h)}</th>`);
@@ -394,6 +441,8 @@ function renderAllRows(){
   thead+=`<th style="color:var(--success)">${esc(shortColName)}</th>`;
   thead+=`<th style="width:60px">狀態</th></tr>`;
   document.getElementById('rowsHead').innerHTML=thead;
+
+  // body
   let tbody='';
   jsonData.forEach((row,i)=>{
     const urlVal=String(row[urlCol]||'');
@@ -402,27 +451,44 @@ function renderAllRows(){
     let statusCell='<span class="dot-wait status-dot"></span>等待';
     if(shortVal&&!shortVal.startsWith('ERROR')) statusCell=`<span class="dot-ok status-dot"></span>完成`;
     else if(shortVal.startsWith('ERROR')) statusCell=`<span class="dot-err status-dot"></span>失敗`;
+
     tbody+=`<tr id="row-${i}">`;
     tbody+=`<td style="color:var(--muted);width:40px">${i+1}</td>`;
     others.forEach(h=>tbody+=`<td>${trunc(esc(String(row[h]||'')),30)}</td>`);
     tbody+=`<td class="url-cell">${trunc(esc(urlVal),50)}</td>`;
-    if(shortVal.startsWith('ERROR')) tbody+=`<td class="err-cell">${esc(shortVal)}</td>`;
-    else if(shortVal) tbody+=`<td class="short-cell">${esc(shortVal)}</td>`;
-    else if(!isUrl) tbody+=`<td class="pending-cell">—</td>`;
-    else tbody+=`<td class="pending-cell" id="short-${i}">（待轉換）</td>`;
+
+    if(shortVal.startsWith('ERROR'))
+      tbody+=`<td class="err-cell">${esc(shortVal)}</td>`;
+    else if(shortVal)
+      tbody+=`<td class="short-cell">${esc(shortVal)}</td>`;
+    else if(!isUrl)
+      tbody+=`<td class="pending-cell">—</td>`;
+    else
+      tbody+=`<td class="pending-cell" id="short-${i}">（待轉換）</td>`;
+
     tbody+=`<td style="font-size:11px;color:var(--muted)" id="status-${i}">${statusCell}</td>`;
     tbody+=`</tr>`;
   });
   document.getElementById('rowsBody').innerHTML=tbody;
 }
 
-function updateRow(i,shortVal,state){
+/* ── Update single row in-place ── */
+function updateRow(i, shortVal, state){
   const shortCell=document.getElementById(`short-${i}`);
   const statusCell=document.getElementById(`status-${i}`);
   if(shortCell){
-    if(state==='converting'){shortCell.innerHTML='<span class="dot-spin"></span>';shortCell.className='pending-cell';}
-    else if(state==='ok'){shortCell.textContent=shortVal;shortCell.className='short-cell';shortCell.removeAttribute('id');}
-    else{shortCell.textContent=shortVal;shortCell.className='err-cell';shortCell.removeAttribute('id');}
+    if(state==='converting'){
+      shortCell.innerHTML='<span class="dot-spin"></span>';
+      shortCell.className='pending-cell';
+    } else if(state==='ok'){
+      shortCell.textContent=shortVal;
+      shortCell.className='short-cell';
+      shortCell.removeAttribute('id');
+    } else {
+      shortCell.textContent=shortVal;
+      shortCell.className='err-cell';
+      shortCell.removeAttribute('id');
+    }
   }
   if(statusCell){
     if(state==='converting') statusCell.innerHTML='<span class="dot-spin"></span>轉換中';
@@ -431,6 +497,7 @@ function updateRow(i,shortVal,state){
   }
 }
 
+/* ── Convert ── */
 async function startConvert(){
   const apiKey=document.getElementById('apiKey').value.trim();
   if(!apiKey){alert('請先填入 API Key');return;}
@@ -442,9 +509,12 @@ async function startConvertUrl(apiKey){
   const raw=document.getElementById('urlTextarea').value.trim();
   if(!raw){alert('請輸入至少一個網址');return;}
   const urls=raw.split('\n').map(u=>u.trim()).filter(Boolean);
+
   const btn=document.getElementById('convertBtn');
   btn.disabled=true;
   btn.innerHTML='<span class="dot-spin"></span> 轉換中…';
+
+  // build results table
   const area=document.getElementById('urlResultsArea');
   area.innerHTML=`<div class="url-results-wrap"><table>
     <thead><tr><th style="width:36px">#</th><th>原始網址</th><th>短網址</th><th style="width:60px">狀態</th><th style="width:52px"></th></tr></thead>
@@ -456,6 +526,7 @@ async function startConvertUrl(apiKey){
       <td id="urcp-${i}"></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
+
   let ok=0,fail=0;
   for(let i=0;i<urls.length;i++){
     const url=urls[i];
@@ -463,7 +534,11 @@ async function startConvertUrl(apiKey){
     document.getElementById(`urs-${i}`).innerHTML='<span class="dot-spin"></span>';
     let result;
     try{
-      const res=await fetch('https://api.reurl.cc/shorten',{method:'POST',headers:{'Content-Type':'application/json','reurl-api-key':apiKey},body:JSON.stringify({url})});
+      const res=await fetch('https://api.reurl.cc/shorten',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','reurl-api-key':apiKey},
+        body:JSON.stringify({url})
+      });
       const data=await res.json();
       result=data.short_url?{ok:true,short:data.short_url}:{ok:false,short:`ERROR: ${data.message||data.error||res.status}`};
     }catch(e){result={ok:false,short:`ERROR: ${e.message}`};}
@@ -481,7 +556,10 @@ async function startConvertUrl(apiKey){
           navigator.clipboard.writeText(result.short).then(()=>{
             copyBtn.classList.add('copied');
             copyBtn.innerHTML=`<span class="check-icon">✓</span> 已複製`;
-            setTimeout(()=>{copyBtn.classList.remove('copied');copyBtn.textContent='複製';},500);
+            setTimeout(()=>{
+              copyBtn.classList.remove('copied');
+              copyBtn.textContent='複製';
+            },1000);
           });
         });
         cpCell.appendChild(copyBtn);
@@ -506,9 +584,12 @@ async function startConvertExcel(apiKey){
   btn.disabled=true;
   btn.innerHTML='<span class="dot-spin"></span> 轉換中…';
   document.getElementById('saveBtn').disabled=true;
+
   const pw=document.getElementById('progressWrap');
   const pb=document.getElementById('progressBar');
-  pw.style.display='block';pb.style.width='0%';
+  pw.style.display='block';
+  pb.style.width='0%';
+
   let ok=0,fail=0,skip=0;
   for(let i=0;i<jsonData.length;i++){
     const url=String(jsonData[i][urlCol]||'').trim();
@@ -516,7 +597,11 @@ async function startConvertExcel(apiKey){
     updateRow(i,'','converting');
     let result;
     try{
-      const res=await fetch('https://api.reurl.cc/shorten',{method:'POST',headers:{'Content-Type':'application/json','reurl-api-key':apiKey},body:JSON.stringify({url})});
+      const res=await fetch('https://api.reurl.cc/shorten',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','reurl-api-key':apiKey},
+        body:JSON.stringify({url})
+      });
       const data=await res.json();
       result=data.short_url?{ok:true,short:data.short_url}:{ok:false,short:`ERROR: ${data.message||data.error||res.status}`};
     }catch(e){result={ok:false,short:`ERROR: ${e.message}`};}
@@ -535,17 +620,22 @@ async function startConvertExcel(apiKey){
   if(pw2){pw2.style.opacity='0';setTimeout(()=>{pw2.style.display='none';pw2.style.opacity='1';},420);}
 }
 
+/* ── Save ── */
 function saveExcel(){
   if(!wb||!jsonData.length)return;
   const allHeaders=[...headers];
   if(!allHeaders.includes(shortColName))allHeaders.push(shortColName);
   const ws=XLSX.utils.json_to_sheet(jsonData,{header:allHeaders});
-  ws['!cols']=allHeaders.map(h=>{const w=h===shortColName?30:Math.min(60,Math.max(h.length,...jsonData.map(r=>String(r[h]||'').length)))+2;return{wch:w};});
+  ws['!cols']=allHeaders.map(h=>{
+    const w=h===shortColName?30:Math.min(60,Math.max(h.length,...jsonData.map(r=>String(r[h]||'').length)))+2;
+    return{wch:w};
+  });
   wb.Sheets[wsName]=ws;
   const base=originalFileName.replace(/\.(xlsx|xls|csv)$/i,'');
   XLSX.writeFile(wb,`${base}_短網址.xlsx`);
 }
 
+/* ── Clear ── */
 function clearFile(){
   wb=null;wsName='';jsonData=[];headers=[];
   document.getElementById('dropArea').style.display='block';
@@ -553,6 +643,8 @@ function clearFile(){
   document.getElementById('convertBtn').disabled=true;
   document.getElementById('saveBtn').disabled=true;
   document.getElementById('counter').textContent='';
+  document.getElementById('progressWrap').style.display='none';
+  document.getElementById('progressBar').style.width='0%';
   fileInput.value='';
 }
 

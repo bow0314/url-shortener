@@ -140,6 +140,7 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   .col-select-row{flex-wrap:wrap;gap:8px;}
   .col-select-row select{flex:1;min-width:100px;}
   #step2Card .step2-actions{margin-bottom:8px;}
+  .btn-hidden{display:none!important;}
   /* rows table: hide # and extras, truncate with inner div */
   .rows-table-wrap{overflow-x:auto;}
   .mob-hide{display:none;}
@@ -241,6 +242,25 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   display:inline-block;
   animation:checkPop .2s cubic-bezier(.34,1.56,.64,1) both;
 }
+/* ── Key manager ── */
+.key-manager{margin-top:12px;}
+.key-manager-toggle{display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:0;transition:.15s;}
+.key-manager-toggle:hover{color:var(--text);}
+.key-manager-toggle .arr{transition:transform .25s;display:inline-block;}
+.key-manager-body{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:400px;opacity:1;margin-top:10px;}
+.key-manager-body.closed{max-height:0;opacity:0;pointer-events:none;}
+.key-slot{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.key-slot-label{font-size:11px;font-weight:700;color:var(--muted);width:44px;flex-shrink:0;}
+.key-slot input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Courier New',monospace;font-size:12px;padding:7px 10px;outline:none;transition:border-color .2s;}
+.key-slot input:focus{border-color:var(--accent);}
+.key-slot input.active-key{border-color:var(--accent);background:rgba(124,111,240,.07);}
+.key-slot-count{font-size:11px;width:52px;text-align:right;flex-shrink:0;color:var(--muted);}
+.key-slot-count.exhausted{color:var(--error);}
+.key-slot-count.active{color:var(--accent2);font-weight:700;}
+.key-status-btn{font-size:12px;color:var(--accent2);text-decoration:none;white-space:nowrap;padding:10px 14px;border-radius:7px;background:var(--tip-bg);border:1px solid var(--tip-border);transition:.15s;cursor:pointer;font-weight:600;}
+.key-status-btn:hover:not(:disabled){opacity:.8;}
+.key-status-btn:disabled{opacity:.4;cursor:not-allowed;}
+
 @keyframes checkPop{
   0%{transform:scale(0) rotate(-20deg);opacity:0;}
   100%{transform:scale(1) rotate(0deg);opacity:1;}
@@ -268,19 +288,22 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 <!-- Step 1: API Key -->
 <div class="card">
   <div class="card-header">
-    <span class="label">Step 1 — reurl.cc API Key</span>
+    <span class="label">Step 1 — 金鑰自動輪替中，滿載時請更新</span>
     <button class="collapse-btn" id="step1ColBtn" onclick="toggleStep1()">
-      <span class="arr" id="step1Arr">▾</span> 收合
+      <span class="arr" id="step1Arr">▸</span> 展開
     </button>
   </div>
-  <div class="collapsible" id="step1Body">
+  <div class="collapsible closed" id="step1Body">
     <div class="api-row">
-      <input type="password" id="apiKey" placeholder="貼上你的 API Key" />
-      <a href="https://reurl.cc/main/user/signin/tw" target="_blank" class="api-link">登入取得 →</a>
+      <input type="password" id="apiKey" style="display:none" />
+      <!-- 正常狀態 -->
+      <span id="keyNormalText" style="flex:1;font-size:13px;color:var(--muted);padding:10px 0;">自動使用內建金鑰，每把限 100 次/天</span>
+      <!-- 耗盡狀態 -->
+      <input type="password" id="keyNewInput" placeholder="500 次已滿載，請輸入新的 API Key" style="display:none;flex:1;" oninput="onNewKeyInput(this.value)" />
+      <button class="key-status-btn" id="keyStatusBtn" onclick="cycleKey()">金鑰 1 (0)</button>
     </div>
     <div class="tip">
-      <strong>如何取得？</strong>
-      <a href="https://reurl.cc/main/user/signin/tw" target="_blank">reurl.cc</a> 免費註冊 → 登入 → 開發者頁面 → 複製 API Key。免費方案 <strong>100 次/天</strong>。
+      <strong>金鑰狀態：</strong>點右側按鈕可手動切換金鑰 · 達 100 次時自動切換下一把 · 共 5 把可用 · <a href="https://reurl.cc/main/user/signin/tw" target="_blank">前往申請金鑰 →</a>
     </div>
   </div>
 </div>
@@ -368,16 +391,88 @@ function toggleTheme(){
 }
 
 /* ── Step 1 collapse ── */
-let step1Open=true;
+let step1Open=false;
 function toggleStep1(){
   step1Open=!step1Open;
   const body=document.getElementById('step1Body');
   const btn=document.getElementById('step1ColBtn');
-  const arr=document.getElementById('step1Arr');
   body.classList.toggle('closed',!step1Open);
-  arr.textContent=step1Open?'▾':'▸';
   btn.innerHTML=`<span class="arr" id="step1Arr">${step1Open?'▾':'▸'}</span> ${step1Open?'收合':'展開'}`;
 }
+
+/* ── Key manager ── */
+const KEY_MAX=100;
+const BUILTIN_KEYS=[
+  '4070ff49d794e437125e3b663c974755ecd7b133949304df8a38b58d65165567c4f5d6',
+  '4070ff49d794e43713543b663c974755ecd7b133999a04df8a38b58d65165567c4f5d6',
+  '4070ff49d794e43713533b663c974755ecd7b133989304df8a38b58d65165567c4f5d6',
+  '4070ff49d794e43713523b663c974755ecd7b133989204df8a38b58d65165567c4f5d6',
+  '4070ff49d794e43713513b663c974755ecd7b132919b04df8a38b58d65165567c4f5d6'
+];
+let keyCounts=JSON.parse(localStorage.getItem('km_counts')||'[0,0,0,0,0]');
+let activeKeyIdx=parseInt(localStorage.getItem('km_active')||'0');
+
+function saveKM(){
+  localStorage.setItem('km_counts',JSON.stringify(keyCounts));
+  localStorage.setItem('km_active',String(activeKeyIdx));
+}
+
+function isExhausted(i){return keyCounts[i]>=KEY_MAX;}
+
+function updateKeyBtn(){
+  const btn=document.getElementById('keyStatusBtn');
+  const normalText=document.getElementById('keyNormalText');
+  const newInput=document.getElementById('keyNewInput');
+  const allExhausted=BUILTIN_KEYS.every((_,i)=>isExhausted(i));
+
+  if(allExhausted){
+    // 耗盡狀態：顯示輸入框，按鈕變成申請連結
+    normalText.style.display='none';
+    newInput.style.display='';
+    btn.textContent='申請金鑰 →';
+    btn.disabled=false;
+    btn.onclick=()=>window.open('https://reurl.cc/main/user/signin/tw','_blank');
+  } else {
+    // 正常狀態
+    normalText.style.display='';
+    newInput.style.display='none';
+    btn.textContent=`金鑰 ${activeKeyIdx+1} (${keyCounts[activeKeyIdx]})`;
+    btn.disabled=false;
+    btn.onclick=cycleKey;
+  }
+}
+
+function onNewKeyInput(val){
+  // 用新金鑰覆蓋 hidden input，讓 API 呼叫可以使用
+  document.getElementById('apiKey').value=val.trim();
+}
+
+function cycleKey(){
+  for(let i=1;i<=5;i++){
+    const next=(activeKeyIdx+i)%5;
+    if(!isExhausted(next)){
+      activeKeyIdx=next;
+      document.getElementById('apiKey').value=BUILTIN_KEYS[next];
+      saveKM();
+      updateKeyBtn();
+      return;
+    }
+  }
+  updateKeyBtn();
+}
+
+function incrementKeyCount(){
+  keyCounts[activeKeyIdx]=(keyCounts[activeKeyIdx]||0)+1;
+  saveKM();
+  updateKeyBtn();
+  if(isExhausted(activeKeyIdx)) cycleKey();
+}
+
+// Init: set active key in input
+(function initKM(){
+  document.getElementById('apiKey').value=BUILTIN_KEYS[activeKeyIdx];
+  updateKeyBtn();
+})();
 
 /* ── State ── */
 let wb=null,wsName='',jsonData=[],headers=[],urlColIdx=-1,shortColName='短網址';
@@ -577,6 +672,7 @@ async function startConvertUrl(apiKey){
     if(result.ok){
       sc.textContent=result.short;sc.style.color='var(--success)';sc.style.fontStyle='normal';
       st.innerHTML='<span class="dot-ok status-dot"></span>完成';
+      incrementKeyCount();
       const cpCell=document.getElementById(`urcp-${i}`);
       if(cpCell){
         const copyBtn=document.createElement('button');
@@ -637,7 +733,7 @@ async function startConvertExcel(apiKey){
     }catch(e){result={ok:false,short:`ERROR: ${e.message}`};}
     jsonData[i][shortColName]=result.short;
     updateRow(i,result.short,result.ok?'ok':'error');
-    if(result.ok)ok++;else fail++;
+    if(result.ok){ok++;incrementKeyCount();}else fail++;
     pb.style.width=((i+1)/jsonData.length*100)+'%';
     document.getElementById('counter').textContent=`${ok} 成功 / ${fail} 失敗`;
     if(i<jsonData.length-1)await sleep(300);

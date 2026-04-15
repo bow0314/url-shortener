@@ -91,10 +91,17 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 .tip a:hover::after{transform:scaleX(1);}
 
 /* ── Step 2 header with buttons ── */
-.step2-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;flex-wrap:wrap;row-gap:10px;}
-.step2-header .label{flex:1;min-width:120px;padding-top:10px;}
+.step2-header{margin-bottom:0;}
+.step2-header .label{display:block;padding-top:10px;}
 .step2-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
 .step2-buttons{display:flex;align-items:center;gap:10px;}
+/* PC: grid layout — label left, actions right, switch & panels full width below */
+#step2Card{display:grid;grid-template-columns:1fr auto;column-gap:12px;}
+#step2Card>*{min-width:0;}
+#step2Card .step2-header{grid-column:1;grid-row:1;margin-bottom:16px;}
+#step2Card .step2-actions{grid-column:2;grid-row:1;margin-bottom:16px;}
+#step2Card .mode-switch{grid-column:1/-1;grid-row:2;justify-self:start;margin-bottom:16px;}
+#step2Card #urlPanel,#step2Card #excelPanel{grid-column:1/-1;grid-row:3;}
 .btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
 #convertBtn{min-width:108px;}
 #saveBtn{min-width:108px;}
@@ -113,13 +120,18 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   header{margin-bottom:20px;}
   h1{font-size:18px;}
   h1 span{font-size:12px;}
+  .theme-label{display:none;}
   .card{padding:14px 12px;}
   /* API row: wrap so button drops below on very small screens */
   .api-row{flex-wrap:wrap;}
   .api-row input{min-width:0;flex:1 1 180px;}
   .api-link{flex-shrink:0;}
-  .step2-header{flex-direction:column;align-items:flex-start;}
-  .step2-actions{width:100%;}
+  .step2-header{order:1;}
+  #step2Card{grid-template-columns:1fr;}
+  #step2Card .step2-header{grid-row:1;}
+  #step2Card .mode-switch{grid-row:2;}
+  #step2Card .step2-actions{grid-row:3;grid-column:1;width:100%;}
+  #step2Card #urlPanel,#step2Card #excelPanel{grid-row:4;}
   .step2-buttons{width:100%;flex-direction:column-reverse;}
   #convertBtn,#saveBtn{width:100%;}
   .mode-switch{width:100%;display:flex;}
@@ -127,9 +139,22 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   /* col-select: keep horizontal, allow wrap if very narrow */
   .col-select-row{flex-wrap:wrap;gap:8px;}
   .col-select-row select{flex:1;min-width:100px;}
-  /* table: show all columns, allow horizontal scroll */
+  #step2Card .step2-actions{margin-bottom:8px;}
+  /* rows table: hide # and extras, truncate with inner div */
   .rows-table-wrap{overflow-x:auto;}
+  .mob-hide{display:none;}
+  .mob-trunc-wrap{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;}
+  /* url results table: hide 狀態, fix copy button */
   .url-results-wrap{overflow-x:auto;}
+  .url-results-wrap table{table-layout:fixed;width:100%;}
+  .url-results-wrap th:nth-child(1),.url-results-wrap td:nth-child(1){width:28px;}
+  .url-results-wrap th:nth-child(3),.url-results-wrap td:nth-child(3){width:34%;}
+  .url-results-wrap th:nth-child(4),.url-results-wrap td:nth-child(4){display:none;}
+  .url-results-wrap th:nth-child(5),.url-results-wrap td:nth-child(5){width:84px;padding:4px;}
+  .url-results-wrap td:nth-child(5) .copy-btn{width:100%;}
+  .copy-btn .copied-text{display:none;}
+  .url-results-wrap td:nth-child(2),
+  .url-results-wrap td:nth-child(3){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;}
 }
 
 /* ── Progress (legacy, unused) ── */
@@ -261,22 +286,22 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 </div>
 
 <!-- Step 2 -->
-<div class="card">
+<div class="card" id="step2Card">
   <div class="step2-header">
     <span class="label" id="step2Label">Step 2 — 拖入 Excel 檔案</span>
-    <div class="step2-actions">
-      <div class="step2-buttons">
-        <button class="btn btn-success" id="saveBtn" onclick="saveExcel()" disabled>
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M4 8l4 4 4-4M3 13h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          儲存 Excel
-        </button>
-        <button class="btn btn-primary" id="convertBtn" onclick="startConvert()" disabled>
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6-2.686-6-6-6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M5 2L2 5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          執行轉換
-        </button>
-      </div>
-      <span class="counter" id="counter"></span>
+  </div>
+  <div class="step2-actions">
+    <div class="step2-buttons">
+      <button class="btn btn-success" id="saveBtn" onclick="saveExcel()" disabled>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M4 8l4 4 4-4M3 13h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        儲存 Excel
+      </button>
+      <button class="btn btn-primary" id="convertBtn" onclick="startConvert()" disabled>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6-2.686-6-6-6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M5 2L2 5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        執行轉換
+      </button>
     </div>
+    <span class="counter" id="counter"></span>
   </div>
 
   <!-- Mode switch -->
@@ -436,17 +461,15 @@ function onShortColChange(){
 /* ── Render all rows dynamically (no fixed height) ── */
 function renderAllRows(){
   const urlCol=headers[urlColIdx];
-  // visible columns: url col + up to 2 other cols + short col
   const others=headers.filter((_,i)=>i!==urlColIdx).slice(0,2);
-  const visCols=[...others,urlCol];
 
   // header
   let thead='<tr>';
-  thead+=`<th style="width:40px">#</th>`;
-  others.forEach(h=>thead+=`<th>${esc(h)}</th>`);
-  thead+=`<th style="color:var(--accent2)">${esc(urlCol)}</th>`;
-  thead+=`<th style="color:var(--success)">${esc(shortColName)}</th>`;
-  thead+=`<th style="width:60px">狀態</th></tr>`;
+  thead+=`<th class="mob-hide" style="width:40px">#</th>`;
+  others.forEach(h=>thead+=`<th class="mob-hide">${esc(h)}</th>`);
+  thead+=`<th class="th-url" style="color:var(--accent2)">${esc(urlCol)}</th>`;
+  thead+=`<th class="th-short" style="color:var(--success)">${esc(shortColName)}</th>`;
+  thead+=`<th class="th-status" style="width:60px">狀態</th></tr>`;
   document.getElementById('rowsHead').innerHTML=thead;
 
   // body
@@ -460,18 +483,18 @@ function renderAllRows(){
     else if(shortVal.startsWith('ERROR')) statusCell=`<span class="dot-err status-dot"></span>失敗`;
 
     tbody+=`<tr id="row-${i}">`;
-    tbody+=`<td style="color:var(--muted);width:40px">${i+1}</td>`;
-    others.forEach(h=>tbody+=`<td>${trunc(esc(String(row[h]||'')),30)}</td>`);
-    tbody+=`<td class="url-cell">${trunc(esc(urlVal),50)}</td>`;
+    tbody+=`<td class="mob-hide" style="color:var(--muted);width:40px">${i+1}</td>`;
+    others.forEach(h=>tbody+=`<td class="mob-hide">${trunc(esc(String(row[h]||'')),30)}</td>`);
+    tbody+=`<td class="url-cell"><div class="mob-trunc-wrap">${trunc(esc(urlVal),50)}</div></td>`;
 
     if(shortVal.startsWith('ERROR'))
-      tbody+=`<td class="err-cell">${esc(shortVal)}</td>`;
+      tbody+=`<td class="err-cell"><div class="mob-trunc-wrap">${esc(shortVal)}</div></td>`;
     else if(shortVal)
-      tbody+=`<td class="short-cell">${esc(shortVal)}</td>`;
+      tbody+=`<td class="short-cell"><div class="mob-trunc-wrap">${esc(shortVal)}</div></td>`;
     else if(!isUrl)
-      tbody+=`<td class="pending-cell">—</td>`;
+      tbody+=`<td class="pending-cell"><div class="mob-trunc-wrap">—</div></td>`;
     else
-      tbody+=`<td class="pending-cell" id="short-${i}">（待轉換）</td>`;
+      tbody+=`<td class="pending-cell" id="short-${i}"><div class="mob-trunc-wrap">（待轉換）</div></td>`;
 
     tbody+=`<td style="font-size:11px;color:var(--muted)" id="status-${i}">${statusCell}</td>`;
     tbody+=`</tr>`;
@@ -562,7 +585,7 @@ async function startConvertUrl(apiKey){
         copyBtn.addEventListener('click',()=>{
           navigator.clipboard.writeText(result.short).then(()=>{
             copyBtn.classList.add('copied');
-            copyBtn.innerHTML=`<span class="check-icon">✓</span> 已複製`;
+            copyBtn.innerHTML=`<span class="check-icon">✓</span><span class="copied-text"> 已複製</span>`;
             setTimeout(()=>{
               copyBtn.classList.remove('copied');
               copyBtn.textContent='複製';

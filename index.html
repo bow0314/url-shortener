@@ -154,6 +154,7 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   .url-results-wrap th:nth-child(5),.url-results-wrap td:nth-child(5){width:84px;padding:4px;}
   .url-results-wrap td:nth-child(5) .copy-btn{width:100%;}
   .copy-btn .copied-text{display:none;}
+  .copy-all-btn .copied-text{display:none;}
   .url-results-wrap td:nth-child(2),
   .url-results-wrap td:nth-child(3){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;}
 }
@@ -261,6 +262,14 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 .key-status-btn:hover:not(:disabled){opacity:.8;}
 .key-status-btn:disabled{opacity:.4;cursor:not-allowed;}
 
+.copy-all-btn{
+  padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;background:var(--accent);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  white-space:nowrap;transition:filter .15s, background .15s;width:80px;
+}
+.copy-all-btn:hover{filter:brightness(1.15);}
+.copy-all-btn.copied{background:var(--success);color:#0a2a18;}
 @keyframes checkPop{
   0%{transform:scale(0) rotate(-20deg);opacity:0;}
   100%{transform:scale(1) rotate(0deg);opacity:1;}
@@ -329,19 +338,19 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 
   <!-- Mode switch -->
   <div class="mode-switch">
-    <button class="mode-opt" id="modeUrl" onclick="switchMode('url')">📝 輸入網址</button>
-    <button class="mode-opt active" id="modeExcel" onclick="switchMode('excel')">📊 拖曳 Excel</button>
+    <button class="mode-opt active" id="modeUrl" onclick="switchMode('url')">📝 輸入網址</button>
+    <button class="mode-opt" id="modeExcel" onclick="switchMode('excel')">📊 拖曳 Excel</button>
   </div>
 
   <!-- URL input panel -->
-  <div id="urlPanel" style="display:none">
+  <div id="urlPanel" style="display:block">
     <textarea class="url-textarea" id="urlTextarea" placeholder="每行貼上一個完整網址，例如：&#10;https://www.youtube.com/watch?v=xxxxxxxxxx&#10;https://www.google.com/maps/place/...&#10;https://example.com/very/long/path?query=value"></textarea>
     <div class="url-hint">每行一個網址，需包含 https:// 或 http://</div>
     <div id="urlResultsArea"></div>
   </div>
 
   <!-- Excel panel -->
-  <div id="excelPanel">
+  <div id="excelPanel" style="display:none">
     <div id="dropArea">
       <div class="drop-zone" id="dropZone">
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
@@ -365,7 +374,7 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 </div>
 <script>
 /* ── Mode switch ── */
-let currentMode='excel';
+let currentMode='url';
 function switchMode(mode){
   currentMode=mode;
   document.getElementById('modeUrl').classList.toggle('active',mode==='url');
@@ -473,6 +482,9 @@ function incrementKeyCount(){
   document.getElementById('apiKey').value=BUILTIN_KEYS[activeKeyIdx];
   updateKeyBtn();
 })();
+
+// 初始化 mode 狀態（同步按鈕顯示）
+switchMode('url');
 
 /* ── State ── */
 let wb=null,wsName='',jsonData=[],headers=[],urlColIdx=-1,shortColName='短網址';
@@ -642,7 +654,7 @@ async function startConvertUrl(apiKey){
   // build results table
   const area=document.getElementById('urlResultsArea');
   area.innerHTML=`<div class="url-results-wrap"><table>
-    <thead><tr><th style="width:36px">#</th><th>原始網址</th><th>短網址</th><th style="width:60px">狀態</th><th style="width:52px"></th></tr></thead>
+    <thead><tr><th style="width:36px">#</th><th>原始網址</th><th>短網址</th><th style="width:60px">狀態</th><th style="width:84px;text-align:right"><button class="copy-all-btn" id="copyAllBtn" onclick="copyAllShortUrls()" style="display:none">全部複製</button></th></tr></thead>
     <tbody id="urlResultsBody">${urls.map((u,i)=>`<tr id="ur-${i}">
       <td style="color:var(--muted)">${i+1}</td>
       <td style="font-family:'Courier New',monospace;color:var(--accent2)">${trunc(esc(u),60)}</td>
@@ -702,6 +714,7 @@ async function startConvertUrl(apiKey){
   btn.disabled=false;
   btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6-2.686-6-6-6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M5 2L2 5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 執行轉換`;
   document.getElementById('counter').textContent=`完成：${ok} 成功 / ${fail} 失敗`;
+  if(ok>0){const cab=document.getElementById('copyAllBtn');if(cab)cab.style.display='';}
 }
 
 async function startConvertExcel(apiKey){
@@ -772,6 +785,26 @@ function clearFile(){
   document.getElementById('progressWrap').style.display='none';
   document.getElementById('progressBar').style.width='0%';
   fileInput.value='';
+}
+
+function copyAllShortUrls(){
+  const rows=document.querySelectorAll('#urlResultsBody tr');
+  const shorts=[];
+  rows.forEach((_,i)=>{
+    const cell=document.getElementById(`urs-${i}`);
+    if(cell&&cell.textContent.startsWith('https://')) shorts.push(cell.textContent.trim());
+  });
+  if(!shorts.length) return;
+  navigator.clipboard.writeText(shorts.join('\n')).then(()=>{
+    const btn=document.getElementById('copyAllBtn');
+    if(!btn) return;
+    btn.classList.add('copied');
+    btn.innerHTML=`<span class="check-icon">✓</span><span class="copied-text"> 已複製</span>`;
+    setTimeout(()=>{
+      btn.classList.remove('copied');
+      btn.textContent='全部複製';
+    },1500);
+  });
 }
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}

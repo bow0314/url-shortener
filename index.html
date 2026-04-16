@@ -23,7 +23,7 @@
   --accent:#6055d8;--accent2:#5048c8;
   --success:#1a9e55;--error:#cc3333;
   --tip-bg:rgba(96,85,216,.06);--tip-border:rgba(96,85,216,.18);--tip-text:#4a42a0;
-  --toggle-track:#c8c8e0;--toggle-thumb:#1a1a2e;
+  --toggle-track:#c8c8e0;--toggle-thumb:#B7B0F8;
 }
 
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -395,7 +395,7 @@ function switchMode(mode){
   const btn=document.getElementById('convertBtn');
   if(mode==='url'){
     const ta=document.getElementById('urlTextarea');
-    btn.style.opacity=ta&&ta.value.trim()?'1':'0.8';
+    btn.style.opacity=ta&&ta.value.trim()?'1':'0.25';
   } else {
     btn.style.opacity='1';
   }
@@ -502,11 +502,11 @@ switchMode('url');
   const ta=document.getElementById('urlTextarea');
   const btn=document.getElementById('convertBtn');
   function updateOpacity(){
-    if(currentMode==='url') btn.style.opacity=ta.value.trim()?'1':'0.8';
+    if(currentMode==='url') btn.style.opacity=ta.value.trim()?'1':'0.25';
   }
   ta.addEventListener('input',updateOpacity);
   // 初始狀態
-  btn.style.opacity='0.8';
+  btn.style.opacity='0.25';
 })();
 
 /* ── State ── */

@@ -116,7 +116,8 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 
 .step2-buttons{display:flex;align-items:center;gap:10px;}
 @media(max-width:600px){
-  .wrap{padding:20px 12px;}
+  .url-textarea{font-size:16px;}
+  .api-row input, #keyNewInput{font-size:16px;}
   header{margin-bottom:20px;}
   h1{font-size:18px;}
   h1 span{font-size:12px;}
@@ -151,8 +152,10 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   .url-results-wrap th:nth-child(1),.url-results-wrap td:nth-child(1){width:28px;}
   .url-results-wrap th:nth-child(3),.url-results-wrap td:nth-child(3){width:34%;}
   .url-results-wrap th:nth-child(4),.url-results-wrap td:nth-child(4){display:none;}
-  .url-results-wrap th:nth-child(5),.url-results-wrap td:nth-child(5){width:84px;padding:4px;}
-  .url-results-wrap td:nth-child(5) .copy-btn{width:100%;}
+  .url-results-wrap th:nth-child(5),.url-results-wrap td:nth-child(5){width:76px!important;padding:4px!important;vertical-align:middle;}
+  .url-results-wrap th:nth-child(5){font-weight:400;}
+  .url-results-wrap td:nth-child(5) .copy-btn{width:68px!important;}
+  .url-results-wrap th:nth-child(5) .copy-all-btn{width:68px!important;}
   .copy-btn .copied-text{display:none;}
   .copy-all-btn .copied-text{display:none;}
   .url-results-wrap td:nth-child(2),
@@ -224,9 +227,10 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 
 /* ── URL results table ── */
 .url-results-wrap{margin-top:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.url-results-wrap table{width:100%;border-collapse:collapse;font-size:12px;}
+.url-results-wrap th:last-child{padding:8px 10px;vertical-align:middle;font-weight:400;}
+.url-results-wrap table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
 .url-results-wrap th{background:var(--surface2);padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--border);}
-.url-results-wrap td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.url-results-wrap td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .url-results-wrap tr:last-child td{border-bottom:none;}
 /* ── Copy button ── */
 .copy-btn{
@@ -266,9 +270,10 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;
   cursor:pointer;border:none;background:var(--accent);color:#fff;
   display:inline-flex;align-items:center;justify-content:center;
-  white-space:nowrap;transition:filter .15s, background .15s;width:80px;
+  white-space:nowrap;transition:filter .15s, transform .15s, background .15s;width:80px;
 }
 .copy-all-btn:hover{filter:brightness(1.15);}
+.copy-all-btn:active{transform:scale(.96);}
 .copy-all-btn.copied{background:var(--success);color:#0a2a18;}
 @keyframes checkPop{
   0%{transform:scale(0) rotate(-20deg);opacity:0;}
@@ -388,6 +393,14 @@ function switchMode(mode){
   if(mode==='url') document.getElementById('convertBtn').disabled=false;
   else document.getElementById('convertBtn').disabled=!wb;
   document.getElementById('counter').textContent='';
+  // 透明度：url 模式看 textarea 是否有內容，excel 模式全亮
+  const btn=document.getElementById('convertBtn');
+  if(mode==='url'){
+    const ta=document.getElementById('urlTextarea');
+    btn.style.opacity=ta&&ta.value.trim()?'1':'0.8';
+  } else {
+    btn.style.opacity='1';
+  }
 }
 
 /* ── Theme ── */
@@ -485,6 +498,18 @@ function incrementKeyCount(){
 
 // 初始化 mode 狀態（同步按鈕顯示）
 switchMode('url');
+
+// 輸入網址模式：textarea 有內容才讓執行轉換按鈕全亮
+(function initUrlOpacity(){
+  const ta=document.getElementById('urlTextarea');
+  const btn=document.getElementById('convertBtn');
+  function updateOpacity(){
+    if(currentMode==='url') btn.style.opacity=ta.value.trim()?'1':'0.8';
+  }
+  ta.addEventListener('input',updateOpacity);
+  // 初始狀態
+  btn.style.opacity='0.8';
+})();
 
 /* ── State ── */
 let wb=null,wsName='',jsonData=[],headers=[],urlColIdx=-1,shortColName='短網址';
@@ -654,7 +679,7 @@ async function startConvertUrl(apiKey){
   // build results table
   const area=document.getElementById('urlResultsArea');
   area.innerHTML=`<div class="url-results-wrap"><table>
-    <thead><tr><th style="width:36px">#</th><th>原始網址</th><th>短網址</th><th style="width:60px">狀態</th><th style="width:84px;text-align:right"><button class="copy-all-btn" id="copyAllBtn" onclick="copyAllShortUrls()" style="display:none">全部複製</button></th></tr></thead>
+    <thead><tr><th style="width:36px">#</th><th style="width:32%">原始網址</th><th style="width:30%">短網址</th><th style="width:60px">狀態</th><th style="width:84px"><button class="copy-all-btn" id="copyAllBtn" onclick="copyAllShortUrls()" style="display:none">全部複製</button></th></tr></thead>
     <tbody id="urlResultsBody">${urls.map((u,i)=>`<tr id="ur-${i}">
       <td style="color:var(--muted)">${i+1}</td>
       <td style="font-family:'Courier New',monospace;color:var(--accent2)">${trunc(esc(u),60)}</td>

@@ -233,12 +233,12 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 /* ── Copy button ── */
 .copy-btn{
   padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;
-  cursor:pointer;border:none;background:var(--accent);color:#fff;
+  cursor:pointer;border:none;background:rgba(124,111,240,.45);color:#fff;
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
   transition:filter .15s, transform .15s, background .15s;white-space:nowrap;
   width:80px;
 }
-.copy-btn:hover{filter:brightness(1.15);}
+.copy-btn:hover{filter:brightness(1.15);opacity:1;background:var(--accent);}
 .copy-btn:active{transform:scale(.96);}
 .copy-btn.copied{background:var(--success);color:#0a2a18;}
 .copy-btn .check-icon{

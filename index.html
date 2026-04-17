@@ -150,10 +150,10 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   .url-results-wrap th:nth-child(1),.url-results-wrap td:nth-child(1){width:28px;}
   .url-results-wrap th:nth-child(3),.url-results-wrap td:nth-child(3){width:34%;}
   .url-results-wrap th:nth-child(4),.url-results-wrap td:nth-child(4){display:none;}
-  .url-results-wrap th:nth-child(5),.url-results-wrap td:nth-child(5){width:76px!important;padding:4px!important;vertical-align:middle;}
+  .url-results-wrap th:nth-child(5),.url-results-wrap td:nth-child(5){width:88px!important;padding:4px!important;vertical-align:middle;}
   .url-results-wrap th:nth-child(5){font-weight:400;}
-  .url-results-wrap td:nth-child(5) .copy-btn{width:68px!important;}
-  .url-results-wrap th:nth-child(5) .copy-all-btn{width:68px!important;}
+  .url-results-wrap td:nth-child(5) .copy-btn{width:80px!important;}
+  .url-results-wrap th:nth-child(5) .copy-all-btn{width:80px!important;}
   .copy-btn .copied-text{display:none;}
   .copy-all-btn .copied-text{display:none;}
   .url-results-wrap td:nth-child(2),
@@ -222,13 +222,16 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 .url-textarea::placeholder{color:var(--muted);}
 .url-textarea:focus{border-color:var(--accent);}
 .url-hint{font-size:12px;color:var(--muted);margin-top:8px;}
+.security-note{font-size:11px;color:var(--muted);margin-top:6px;padding:6px 14px;line-height:1.8;}
+.security-note ul{margin:0;padding-left:16px;}
 
 /* ── URL results table ── */
 .url-results-wrap{margin-top:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
 .url-results-wrap th:last-child{padding:8px 10px;vertical-align:middle;font-weight:400;}
 .url-results-wrap table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
-.url-results-wrap th{background:var(--surface2);padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--border);}
-.url-results-wrap td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.url-results-wrap th{background:var(--surface2);padding:8px 10px;height:48px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.url-results-wrap td{padding:8px 10px;height:48px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.url-results-wrap th:last-child,.url-results-wrap td:last-child{padding:4px;overflow:visible;}
 .url-results-wrap tr:last-child td{border-bottom:none;}
 /* ── Copy button ── */
 .copy-btn{
@@ -236,12 +239,13 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   cursor:pointer;border:none;background:rgba(124,111,240,.45);color:#fff;
   display:inline-flex;align-items:center;justify-content:center;gap:5px;
   transition:filter .15s, transform .15s, background .15s;white-space:nowrap;
-  width:80px;
+  width:88px;
 }
 .copy-btn:hover{filter:brightness(1.15);opacity:1;background:var(--accent);}
 .copy-btn:active{transform:scale(.96);}
 .copy-btn.copied{background:var(--success);color:#0a2a18;}
-.copy-btn .check-icon{
+.copy-btn .check-icon,
+.copy-all-btn .check-icon{
   display:inline-block;
   animation:checkPop .2s cubic-bezier(.34,1.56,.64,1) both;
 }
@@ -268,11 +272,12 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
   padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;
   cursor:pointer;border:none;background:var(--accent);color:#fff;
   display:inline-flex;align-items:center;justify-content:center;
-  white-space:nowrap;transition:filter .15s, transform .15s, background .15s;width:80px;
+  white-space:nowrap;transition:filter .15s, transform .15s, background .15s;width:88px;
 }
 .copy-all-btn:hover{filter:brightness(1.15);}
 .copy-all-btn:active{transform:scale(.96);}
 .copy-all-btn.copied{background:var(--success);color:#0a2a18;}
+[data-theme="light"] .copy-btn.copied,[data-theme="light"] .copy-all-btn.copied{background:#49de8b;}
 @keyframes checkPop{
   0%{transform:scale(0) rotate(-20deg);opacity:0;}
   100%{transform:scale(1) rotate(0deg);opacity:1;}
@@ -347,9 +352,14 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
 
   <!-- URL input panel -->
   <div id="urlPanel" style="display:block">
-    <textarea class="url-textarea" id="urlTextarea" placeholder="每行貼上一個完整網址，例如：&#10;https://www.youtube.com/watch?v=xxxxxxxxxx&#10;https://www.google.com/maps/place/...&#10;https://example.com/very/long/path?query=value"></textarea>
-    <div class="url-hint">每行一個網址，需包含 https:// 或 http://</div>
+    <textarea class="url-textarea" id="urlTextarea" placeholder="每行網址需包含 https:// 或 http:// 完整網址，例如：&#10;https://www.youtube.com/watch?v=xxxxxxxxxx&#10;https://www.google.com/maps/place/...&#10;https://example.com/very/long/path?query=value"></textarea>
     <div id="urlResultsArea"></div>
+    <div class="security-note">
+      <ul>
+        <li>網址轉換處理完全在你的瀏覽器本地執行，資料不會傳送至第三方伺服器</li>
+        <li>輸入的網址僅用於向 reurl.cc 發送縮短請求，不包含任何其他資訊</li>
+      </ul>
+    </div>
   </div>
 
   <!-- Excel panel -->
@@ -371,6 +381,13 @@ h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-t
           <tbody id="rowsBody"></tbody>
         </table>
       </div>
+    </div>
+    <div class="security-note">
+      <ul>
+        <li>轉換結果與儲存的 Excel 檔案全程保留在你的瀏覽器中，不經過任何伺服器</li>
+        <li>Excel 檔案內容由瀏覽器直接讀取與解析，不會上傳至任何位置</li>
+        <li>輸入的網址僅用於向 reurl.cc 發送縮短請求，不包含任何其他資訊</li>
+      </ul>
     </div>
   </div>
 
@@ -677,12 +694,12 @@ async function startConvertUrl(apiKey){
   // build results table
   const area=document.getElementById('urlResultsArea');
   area.innerHTML=`<div class="url-results-wrap"><table>
-    <thead><tr><th style="width:36px">#</th><th style="width:32%">原始網址</th><th style="width:30%">短網址</th><th style="width:60px">狀態</th><th style="width:84px"><button class="copy-all-btn" id="copyAllBtn" onclick="copyAllShortUrls()" style="display:none">全部複製</button></th></tr></thead>
+    <thead><tr><th style="width:36px">#</th><th style="width:26%">原始網址</th><th>短網址</th><th style="width:64px;white-space:nowrap">狀態</th><th style="width:96px"><button class="copy-all-btn" id="copyAllBtn" onclick="copyAllShortUrls()" style="display:none">全部複製</button></th></tr></thead>
     <tbody id="urlResultsBody">${urls.map((u,i)=>`<tr id="ur-${i}">
       <td style="color:var(--muted)">${i+1}</td>
       <td style="font-family:'Courier New',monospace;color:var(--accent2)">${trunc(esc(u),60)}</td>
       <td id="urs-${i}" style="color:var(--muted);font-style:italic;font-family:'Courier New',monospace">（待轉換）</td>
-      <td id="urst-${i}" style="font-size:11px;color:var(--muted)"><span class="dot-wait status-dot"></span>等待</td>
+      <td id="urst-${i}" style="font-size:11px;color:var(--muted);white-space:nowrap"><span class="dot-wait status-dot"></span>等待</td>
       <td id="urcp-${i}"></td>
     </tr>`).join('')}</tbody>
   </table></div>`;
@@ -822,11 +839,11 @@ function copyAllShortUrls(){
     const btn=document.getElementById('copyAllBtn');
     if(!btn) return;
     btn.classList.add('copied');
-    btn.innerHTML=`<span class="check-icon">✓</span><span class="copied-text"> 已複製</span>`;
+    btn.innerHTML=`<span class="check-icon">✓</span> <span class="copied-text">已複製</span>`;
     setTimeout(()=>{
       btn.classList.remove('copied');
       btn.textContent='全部複製';
-    },1500);
+    },1000);
   });
 }
 

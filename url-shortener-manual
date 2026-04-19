@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>短網址轉換器 × reurl.cc</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ── Theme tokens ── */
+[data-theme="dark"]{
+  --bg:#0f0f13;--surface:#18181f;--surface2:#22222d;--surface3:#2a2a38;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.18);
+  --text:#e8e8f0;--muted:#8888a0;--text-inv:#0f0f13;
+  --accent:#7c6ff0;--accent2:#a89cf5;
+  --success:#4ade8a;--error:#f06060;
+  --tip-bg:rgba(124,111,240,.08);--tip-border:rgba(124,111,240,.2);--tip-text:#c0baff;
+  --toggle-track:#3a3a50;--toggle-thumb:#e8e8f0;
+}
+[data-theme="light"]{
+  --bg:#f0f0f5;--surface:#ffffff;--surface2:#f5f5fa;--surface3:#ebebf5;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);
+  --text:#1a1a2e;--muted:#7070a0;--text-inv:#ffffff;
+  --accent:#6055d8;--accent2:#5048c8;
+  --success:#1a9e55;--error:#cc3333;
+  --tip-bg:rgba(96,85,216,.06);--tip-border:rgba(96,85,216,.18);--tip-text:#4a42a0;
+  --toggle-track:#c8c8e0;--toggle-thumb:#B7B0F8;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'SF Pro Text','Segoe UI',sans-serif;min-height:100vh;padding:40px 24px;transition:background .2s,color .2s;}
+.wrap{max-width:860px;margin:0 auto;}
+
+/* ── Header ── */
+header{display:flex;align-items:center;gap:14px;margin-bottom:32px;}
+.logo{width:42px;height:42px;background:var(--accent);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;}
+h1{font-size:22px;font-weight:600;letter-spacing:-.3px;color:var(--text);}
+h1 span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:2px;}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+
+/* ── Theme toggle ── */
+.theme-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 12px;border-radius:20px;background:var(--surface);border:1px solid var(--border2);transition:.2s;user-select:none;}
+.theme-toggle:hover{border-color:var(--accent);}
+.theme-toggle .icon{font-size:14px;transition:.3s;}
+.theme-label{font-size:12px;font-weight:600;color:var(--muted);}
+.toggle-track{width:32px;height:18px;background:var(--toggle-track);border-radius:99px;position:relative;transition:.2s;}
+.toggle-thumb{width:12px;height:12px;background:var(--toggle-thumb);border-radius:50%;position:absolute;top:3px;left:3px;transition:.2s;}
+[data-theme="light"] .toggle-thumb{left:17px;}
+[data-theme="light"] .toggle-track{background:var(--accent);}
+
+/* ── Card ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:18px;transition:background .2s,border-color .2s;}
+.card-header{display:flex;align-items:center;gap:10px;}
+.label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.card-header .label{flex:1;}
+
+/* ── Collapse button ── */
+.collapse-btn{
+  display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:6px;
+  background:transparent;border:1px solid transparent;
+  color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:.15s;
+}
+.collapse-btn:hover{color:var(--text);background:var(--surface2);border-color:var(--border2);}
+.collapse-btn .arr{transition:transform .25s;display:inline-block;font-style:normal;}
+.collapsed .arr{transform:rotate(-90deg);}
+.collapsible{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:600px;opacity:1;}
+.collapsible.closed{max-height:0;opacity:0;pointer-events:none;}
+
+/* ── API Key ── */
+.api-row{display:flex;gap:10px;align-items:center;margin-top:14px;}
+.api-row input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'Courier New',monospace;font-size:13px;padding:10px 14px;outline:none;transition:border-color .2s;}
+.api-row input:focus{border-color:var(--accent);}
+.api-row input::placeholder{color:var(--muted);letter-spacing:0;font-family:inherit;}
+.api-link{font-size:12px;color:var(--accent2);text-decoration:none;white-space:nowrap;padding:10px 14px;border-radius:7px;background:var(--tip-bg);border:1px solid var(--tip-border);transition:.15s;}
+.api-link:hover{opacity:.8;}
+.tip{font-size:12px;color:var(--tip-text);margin-top:10px;padding:10px 14px;background:var(--tip-bg);border:1px solid var(--tip-border);border-radius:7px;line-height:1.7;}
+.tip strong{color:var(--accent2);}
+.tip a{
+  color:var(--accent2);text-decoration:none;
+  position:relative;display:inline-block;
+  transition:color .2s;
+}
+.tip a::after{
+  content:'';position:absolute;left:0;bottom:-1px;
+  width:100%;height:1.5px;
+  background:currentColor;
+  transform:scaleX(0);transform-origin:left center;
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
+.tip a:hover{color:#ffffff;}
+[data-theme="light"] .tip a:hover{color:var(--accent);}
+.tip a:hover::after{transform:scaleX(1);}
+
+/* ── Step 2 header with buttons ── */
+.step2-header{margin-bottom:0;}
+.step2-header .label{display:block;padding-top:10px;}
+.step2-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+.step2-buttons{display:flex;align-items:center;gap:10px;}
+/* PC: grid layout — label left, actions right, switch & panels full width below */
+#step2Card{display:grid;grid-template-columns:1fr auto;column-gap:12px;}
+#step2Card>*{min-width:0;}
+#step2Card .step2-header{grid-column:1;grid-row:1;margin-bottom:16px;}
+#step2Card .step2-actions{grid-column:2;grid-row:1;margin-bottom:16px;}
+#step2Card .mode-switch{grid-column:1/-1;grid-row:2;justify-self:start;margin-bottom:16px;}
+#step2Card #urlPanel,#step2Card #excelPanel{grid-column:1/-1;grid-row:3;}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;}
+#convertBtn{min-width:108px;}
+#saveBtn{min-width:108px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover:not(:disabled){filter:brightness(1.12);}
+.btn-primary:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed;}
+.btn-success{background:rgba(74,222,138,.13);color:var(--success);border:1px solid rgba(74,222,138,.22);}
+.btn-success:hover:not(:disabled){background:rgba(74,222,138,.22);}
+.btn-success:disabled{opacity:.35;cursor:not-allowed;}
+.btn-hidden{visibility:hidden;pointer-events:none;}
+.counter{font-size:12px;color:var(--muted);white-space:nowrap;min-height:16px;}
+
+.step2-buttons{display:flex;align-items:center;gap:10px;}
+@media(max-width:600px){
+  .wrap{padding:20px 12px;}
+  header{margin-bottom:20px;}
+  h1{font-size:18px;}
+  h1 span{font-size:12px;}
+  .theme-label{display:none;}
+  .card{padding:14px 12px;}
+  /* API row: wrap so button drops below on very small screens */
+  .api-row{flex-wrap:wrap;}
+  .api-row input{min-width:0;flex:1 1 180px;}
+  .api-link{flex-shrink:0;}
+  .step2-header{order:1;}
+  #step2Card{grid-template-columns:1fr;}
+  #step2Card .step2-header{grid-row:1;}
+  #step2Card .mode-switch{grid-row:2;}
+  #step2Card .step2-actions{grid-row:3;grid-column:1;width:100%;}
+  #step2Card #urlPanel,#step2Card #excelPanel{grid-row:4;}
+  .step2-buttons{width:100%;flex-direction:column-reverse;}
+  #convertBtn,#saveBtn{width:100%;}
+  .mode-switch{width:100%;display:flex;}
+  .mode-opt{flex:1;justify-content:center;}
+  /* col-select: keep horizontal, allow wrap if very narrow */
+  .col-select-row{flex-wrap:wrap;gap:8px;}
+  .col-select-row select{flex:1;min-width:100px;}
+  #step2Card .step2-actions{margin-bottom:8px;}
+  .btn-hidden{display:none!important;}
+  /* rows table: hide # and extras, truncate with inner div */
+  .rows-table-wrap{overflow-x:auto;}
+  .mob-hide{display:none;}
+  .mob-trunc-wrap{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;}
+  /* url results table: hide 狀態, fix copy button */
+  .url-results-wrap{overflow-x:auto;}
+  .url-results-wrap table{table-layout:fixed;width:100%;}
+  .url-results-wrap th:nth-child(1),.url-results-wrap td:nth-child(1){width:28px;}
+  .url-results-wrap th:nth-child(3),.url-results-wrap td:nth-child(3){width:34%;}
+  .url-results-wrap th:nth-child(4),.url-results-wrap td:nth-child(4){display:none;}
+  .url-results-wrap th:nth-child(5),.url-results-wrap td:nth-child(5){width:84px;padding:4px;}
+  .url-results-wrap td:nth-child(5) .copy-btn{width:100%;}
+  .copy-btn .copied-text{display:none;}
+  .copy-all-btn .copied-text{display:none;}
+  .url-results-wrap td:nth-child(2),
+  .url-results-wrap td:nth-child(3){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0;}
+}
+
+/* ── Progress (legacy, unused) ── */
+
+/* ── Drop zone ── */
+.drop-zone{
+  border:2px dashed rgba(124,111,240,.35);border-radius:12px;
+  padding:48px 24px;text-align:center;cursor:pointer;
+  transition:all .2s;background:rgba(124,111,240,.04);position:relative;
+}
+[data-theme="light"] .drop-zone{background:rgba(96,85,216,.03);border-color:rgba(96,85,216,.25);}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(124,111,240,.08);}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-icon{font-size:36px;margin-bottom:12px;display:block;}
+.drop-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.drop-sub{font-size:13px;color:var(--muted);}
+.drop-sub span{color:var(--accent2);}
+
+/* ── File info ── */
+.file-info{
+  display:flex;flex-direction:column;margin-bottom:12px;
+  background:rgba(74,222,138,.07);border:1px solid rgba(74,222,138,.18);border-radius:9px;
+  overflow:hidden;
+}
+.file-info-row{display:flex;align-items:center;gap:12px;padding:12px 16px;}
+.file-name{font-size:14px;font-weight:600;color:var(--success);}
+.file-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.file-clear{margin-left:auto;cursor:pointer;background:none;border:none;color:var(--muted);font-size:18px;line-height:1;transition:.15s;}
+.file-clear:hover{color:var(--error);}
+.file-progress{height:3px;background:rgba(74,222,138,.15);display:none;transition:opacity .4s ease;}
+.file-progress-bar{height:100%;background:var(--accent);transition:width .25s ease;width:0%;}
+
+/* ── Col selectors ── */
+.col-select-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.col-select-row label{font-size:12px;color:var(--muted);white-space:nowrap;}
+.col-select-row select{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:6px 10px;outline:none;cursor:pointer;}
+.col-select-row select:focus{border-color:var(--accent);}
+
+/* ── Dynamic rows table ── */
+.rows-table-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.rows-table{width:100%;border-collapse:collapse;font-size:12px;}
+.rows-table th{background:var(--surface2);padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.rows-table td{padding:8px 10px;border-bottom:1px solid var(--border);font-family:'Courier New',monospace;color:var(--text);vertical-align:middle;}
+.rows-table tr:last-child td{border-bottom:none;}
+.rows-table td.url-cell{color:var(--accent2);}
+.rows-table td.short-cell{color:var(--success);}
+.rows-table td.err-cell{color:var(--error);font-family:inherit;font-size:11px;}
+.rows-table td.pending-cell{color:var(--muted);font-style:italic;font-family:inherit;}
+.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.dot-ok{background:var(--success);}
+.dot-err{background:var(--error);}
+.dot-wait{background:var(--muted);}
+.dot-spin{border:1.5px solid var(--muted);border-top-color:var(--accent);border-radius:50%;display:inline-block;width:8px;height:8px;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px;}
+/* ── Mode switch ── */
+.mode-switch{display:inline-flex;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:3px;gap:3px;margin-bottom:16px;}
+.mode-opt{padding:6px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:all .18s;display:flex;align-items:center;gap:6px;}
+.mode-opt:hover{color:var(--text);}
+.mode-opt.active{background:var(--accent);color:#fff;}
+
+/* ── URL textarea panel ── */
+.url-textarea{width:100%;min-height:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Courier New',monospace;font-size:13px;line-height:1.7;padding:14px 16px;resize:vertical;outline:none;transition:border-color .2s;}
+.url-textarea::placeholder{color:var(--muted);}
+.url-textarea:focus{border-color:var(--accent);}
+.url-hint{font-size:12px;color:var(--muted);margin-top:8px;}
+.security-note{font-size:11px;color:var(--muted);margin-top:6px;padding:6px 14px;line-height:1.8;}
+.security-note ul{margin:0;padding-left:16px;}
+
+/* ── URL results table ── */
+.url-results-wrap{margin-top:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.url-results-wrap table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+.url-results-wrap th{background:var(--surface2);padding:8px 10px;height:48px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.url-results-wrap td{padding:8px 10px;height:48px;border-bottom:1px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.url-results-wrap th:last-child,.url-results-wrap td:last-child{padding:4px;overflow:visible;}
+.url-results-wrap tr:last-child td{border-bottom:none;}
+/* ── Copy button ── */
+.copy-btn{
+  padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;background:rgba(124,111,240,.45);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  transition:filter .15s, transform .15s, background .15s;white-space:nowrap;
+  width:88px;
+}
+.copy-btn:hover{filter:brightness(1.15);background:var(--accent);}
+.copy-btn:active{transform:scale(.96);}
+.copy-btn.copied{background:var(--success);color:#0a2a18;}
+.copy-btn .check-icon,
+.copy-all-btn .check-icon{
+  display:inline-block;
+  animation:checkPop .2s cubic-bezier(.34,1.56,.64,1) both;
+}
+/* ── Key manager ── */
+.key-manager{margin-top:12px;}
+.key-manager-toggle{display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;padding:0;transition:.15s;}
+.key-manager-toggle:hover{color:var(--text);}
+.key-manager-toggle .arr{transition:transform .25s;display:inline-block;}
+.key-manager-body{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:400px;opacity:1;margin-top:10px;}
+.key-manager-body.closed{max-height:0;opacity:0;pointer-events:none;}
+.key-slot{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.key-slot-label{font-size:11px;font-weight:700;color:var(--muted);width:44px;flex-shrink:0;}
+.key-slot input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Courier New',monospace;font-size:12px;padding:7px 10px;outline:none;transition:border-color .2s;}
+.key-slot input:focus{border-color:var(--accent);}
+.key-slot input.active-key{border-color:var(--accent);background:rgba(124,111,240,.07);}
+.key-slot-count{font-size:11px;width:52px;text-align:right;flex-shrink:0;color:var(--muted);}
+.key-slot-count.exhausted{color:var(--error);}
+.key-slot-count.active{color:var(--accent2);font-weight:700;}
+.key-status-btn{font-size:12px;color:var(--accent2);text-decoration:none;white-space:nowrap;padding:10px 14px;border-radius:7px;background:var(--tip-bg);border:1px solid var(--tip-border);transition:.15s;cursor:pointer;font-weight:600;}
+.key-status-btn:hover:not(:disabled){opacity:.8;}
+.key-status-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.copy-all-btn{
+  padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;background:var(--accent);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  white-space:nowrap;transition:filter .15s, background .15s;width:88px;
+}
+.copy-all-btn:hover{filter:brightness(1.15);}
+.copy-all-btn.copied{background:var(--success);color:#0a2a18;}
+[data-theme="light"] .copy-btn.copied,[data-theme="light"] .copy-all-btn.copied{background:#49de8b;}
+@keyframes checkPop{
+  0%{transform:scale(0) rotate(-20deg);opacity:0;}
+  100%{transform:scale(1) rotate(0deg);opacity:1;}
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Header -->
+<header>
+  <div class="logo">🔗</div>
+  <h1>短網址轉換器<span>拖入 Excel → 選欄位 → 轉換 → 儲存回 Excel</span></h1>
+  <div class="header-right">
+    <div class="theme-toggle" onclick="toggleTheme()" title="切換明暗模式">
+      <span class="icon" id="themeIcon">🌙</span>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="theme-label" id="themeLabel">暗黑</span>
+    </div>
+  </div>
+</header>
+
+<!-- Step 1: API Key -->
+<div class="card">
+  <div class="card-header">
+    <span class="label">Step 1 — 請輸入 reurl.cc API Key</span>
+    <button class="collapse-btn" id="step1ColBtn" onclick="toggleStep1()">
+      <span class="arr" id="step1Arr">▾</span> 收合
+    </button>
+  </div>
+  <div class="collapsible" id="step1Body">
+    <div class="api-row">
+      <input type="password" id="apiKey" placeholder="貼上你的 API Key" />
+      <a href="https://reurl.cc/main/user/signin/tw" target="_blank" class="api-link">登入取得 →</a>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px;padding:0 2px;">Your personal API key from reurl.cc · Free plan: 100 requests/day</div>
+    <div class="tip">
+      <strong>如何取得？</strong>
+      <a href="https://reurl.cc/main/user/signin/tw" target="_blank">reurl.cc</a> 免費註冊 → 登入 → 開發者頁面 → 複製 API Key。免費方案 <strong>100 次/天</strong>。
+    </div>
+  </div>
+</div>
+
+<!-- Step 2 -->
+<div class="card" id="step2Card">
+  <div class="step2-header">
+    <span class="label" id="step2Label">Step 2 — 拖入 Excel 檔案</span>
+  </div>
+  <div class="step2-actions">
+    <div class="step2-buttons">
+      <button class="btn btn-success" id="saveBtn" onclick="saveExcel()" disabled>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M4 8l4 4 4-4M3 13h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        儲存 Excel
+      </button>
+      <button class="btn btn-primary" id="convertBtn" onclick="startConvert()" disabled>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6-2.686-6-6-6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M5 2L2 5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        執行轉換
+      </button>
+    </div>
+    <span class="counter" id="counter"></span>
+  </div>
+
+  <!-- Mode switch -->
+  <div class="mode-switch">
+    <button class="mode-opt active" id="modeUrl" onclick="switchMode('url')">📝 輸入網址</button>
+    <button class="mode-opt" id="modeExcel" onclick="switchMode('excel')">📊 拖曳 Excel</button>
+  </div>
+
+  <!-- URL input panel -->
+  <div id="urlPanel" style="display:block">
+    <textarea class="url-textarea" id="urlTextarea" placeholder="每行網址需包含 https:// 或 http:// 完整網址，例如：&#10;https://www.youtube.com/watch?v=xxxxxxxxxx&#10;https://www.google.com/maps/place/...&#10;https://example.com/very/long/path?query=value"></textarea>
+    <div id="urlResultsArea"></div>
+    <div class="security-note">
+      <ul>
+        <li>網址轉換處理完全在你的瀏覽器本地執行，資料不會傳送至第三方伺服器</li>
+        <li>輸入的網址僅用於向 reurl.cc 發送縮短請求，不包含任何其他資訊</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Excel panel -->
+  <div id="excelPanel" style="display:none">
+    <div id="dropArea">
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        <span class="drop-icon">📊</span>
+        <div class="drop-title">拖曳 Excel 檔案到這裡</div>
+        <div class="drop-sub">或點擊選擇檔案 &nbsp;·&nbsp; <span>支援 .xlsx / .xls / .csv</span></div>
+      </div>
+    </div>
+    <div id="dataArea" style="display:none">
+      <div class="file-info" id="fileInfo"></div>
+      <div class="col-select-row" id="colSelectRow"></div>
+      <div class="rows-table-wrap">
+        <table class="rows-table" id="rowsTable">
+          <thead id="rowsHead"></thead>
+          <tbody id="rowsBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="security-note">
+      <ul>
+        <li>轉換結果與儲存的 Excel 檔案全程保留在你的瀏覽器中，不經過任何伺服器</li>
+        <li>Excel 檔案內容由瀏覽器直接讀取與解析，不會上傳至任何位置</li>
+        <li>輸入的網址僅用於向 reurl.cc 發送縮短請求，不包含任何其他資訊</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ── Mode switch ── */
+let currentMode='url';
+function switchMode(mode){
+  currentMode=mode;
+  document.getElementById('modeUrl').classList.toggle('active',mode==='url');
+  document.getElementById('modeExcel').classList.toggle('active',mode==='excel');
+  document.getElementById('urlPanel').style.display=mode==='url'?'block':'none';
+  document.getElementById('excelPanel').style.display=mode==='excel'?'block':'none';
+  document.getElementById('step2Label').textContent=mode==='url'?'Step 2 — 輸入網址清單':'Step 2 — 拖入 Excel 檔案';
+  document.getElementById('saveBtn').classList.toggle('btn-hidden', mode==='url');
+  if(mode==='url') document.getElementById('convertBtn').disabled=false;
+  else document.getElementById('convertBtn').disabled=!wb;
+  document.getElementById('counter').textContent='';
+  // 透明度：url 模式看 textarea 是否有內容，excel 模式全亮
+  const btn=document.getElementById('convertBtn');
+  if(mode==='url'){
+    const ta=document.getElementById('urlTextarea');
+    btn.style.opacity=ta&&ta.value.trim()?'1':'0.25';
+  } else {
+    btn.style.opacity='1';
+  }
+}
+
+/* ── Theme ── */
+function toggleTheme(){
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',isDark?'light':'dark');
+  document.getElementById('themeIcon').textContent=isDark?'☀️':'🌙';
+  document.getElementById('themeLabel').textContent=isDark?'明亮':'暗黑';
+}
+
+/* ── Step 1 collapse ── */
+let step1Open=true;
+function toggleStep1(){
+  step1Open=!step1Open;
+  const body=document.getElementById('step1Body');
+  const btn=document.getElementById('step1ColBtn');
+  body.classList.toggle('closed',!step1Open);
+  btn.innerHTML=`<span class="arr" id="step1Arr">${step1Open?'▾':'▸'}</span> ${step1Open?'收合':'展開'}`;
+}
+
+/* ── Key manager ── */
+/* ── Step 1 B版：無內建金鑰，使用者自行輸入 ── */
+function incrementKeyCount(){
+  // B版不計數，直接從 input 讀取金鑰
+}
+
+// 初始化 mode 狀態（同步按鈕顯示）
+switchMode('url');
+
+// 輸入網址模式：textarea 有內容才讓執行轉換按鈕全亮
+(function initUrlOpacity(){
+  const ta=document.getElementById('urlTextarea');
+  const btn=document.getElementById('convertBtn');
+  function updateOpacity(){
+    if(currentMode==='url') btn.style.opacity=ta.value.trim()?'1':'0.25';
+  }
+  ta.addEventListener('input',updateOpacity);
+  btn.style.opacity='0.25';
+})();
+
+/* ── State ── */
+let wb=null,wsName='',jsonData=[],headers=[],urlColIdx=-1,shortColName='短網址';
+let originalFileName='output';
+
+/* ── Drop zone ── */
+const dropZone=document.getElementById('dropZone');
+const fileInput=document.getElementById('fileInput');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag-over');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+fileInput.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
+
+function loadFile(file){
+  originalFileName=file.name;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    wb=XLSX.read(e.target.result,{type:'array'});
+    wsName=wb.SheetNames[0];
+    jsonData=XLSX.utils.sheet_to_json(wb.Sheets[wsName],{defval:''});
+    if(!jsonData.length){alert('此檔案沒有資料列');return;}
+    headers=Object.keys(jsonData[0]);
+    // ensure shortColName doesn't collide
+    shortColName='短網址';
+    if(headers.includes(shortColName)) shortColName='短網址_reurl';
+
+    // auto-detect URL column
+    urlColIdx=0;
+    for(let i=0;i<headers.length;i++){
+      const s=String(jsonData[0][headers[i]]||'');
+      if(s.startsWith('http://')||s.startsWith('https://')){urlColIdx=i;break;}
+    }
+
+    // show data area
+    document.getElementById('dropArea').style.display='none';
+    document.getElementById('dataArea').style.display='block';
+    document.getElementById('convertBtn').disabled=false;
+
+    renderFileInfo(file);
+    renderColSelect();
+    renderAllRows();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderFileInfo(file){
+  document.getElementById('fileInfo').innerHTML=`
+    <div class="file-info-row">
+      <span style="font-size:20px">📄</span>
+      <div>
+        <div class="file-name">${esc(file.name)}</div>
+        <div class="file-meta">${jsonData.length} 列 · ${headers.length} 欄 · 工作表：${esc(wsName)}</div>
+      </div>
+      <button class="file-clear" onclick="clearFile()" title="重新選擇">✕</button>
+    </div>
+    <div class="file-progress" id="progressWrap">
+      <div class="file-progress-bar" id="progressBar"></div>
+    </div>`;
+}
+
+function renderColSelect(){
+  const scOptions=['[新增欄位] 短網址',...headers].map((h,i)=>`<option value="${i}">${esc(h)}</option>`).join('');
+  document.getElementById('colSelectRow').innerHTML=`
+    <label>網址欄位：</label>
+    <select id="colSelect" onchange="onColChange()">${headers.map((h,i)=>`<option value="${i}" ${i===urlColIdx?'selected':''}>${esc(h)}</option>`).join('')}</select>
+    <label>短網址寫入：</label>
+    <select id="shortColSelect" onchange="onShortColChange()">${scOptions}</select>`;
+}
+
+function onColChange(){
+  urlColIdx=parseInt(document.getElementById('colSelect').value);
+  renderAllRows();
+}
+function onShortColChange(){
+  const v=parseInt(document.getElementById('shortColSelect').value);
+  shortColName=v===0?'短網址':headers[v-1];
+  if(shortColName==='短網址'&&headers.includes('短網址')) shortColName='短網址_reurl';
+  renderAllRows();
+}
+
+/* ── Render all rows dynamically (no fixed height) ── */
+function renderAllRows(){
+  const urlCol=headers[urlColIdx];
+  const others=headers.filter((_,i)=>i!==urlColIdx).slice(0,2);
+
+  // header
+  let thead='<tr>';
+  thead+=`<th class="mob-hide" style="width:40px">#</th>`;
+  others.forEach(h=>thead+=`<th class="mob-hide">${esc(h)}</th>`);
+  thead+=`<th class="th-url" style="color:var(--accent2)">${esc(urlCol)}</th>`;
+  thead+=`<th class="th-short" style="color:var(--success)">${esc(shortColName)}</th>`;
+  thead+=`<th class="th-status" style="width:60px">狀態</th></tr>`;
+  document.getElementById('rowsHead').innerHTML=thead;
+
+  // body
+  let tbody='';
+  jsonData.forEach((row,i)=>{
+    const urlVal=String(row[urlCol]||'');
+    const shortVal=String(row[shortColName]||'');
+    const isUrl=urlVal.startsWith('http');
+    let statusCell='<span class="dot-wait status-dot"></span>等待';
+    if(shortVal&&!shortVal.startsWith('ERROR')) statusCell=`<span class="dot-ok status-dot"></span>完成`;
+    else if(shortVal.startsWith('ERROR')) statusCell=`<span class="dot-err status-dot"></span>失敗`;
+
+    tbody+=`<tr id="row-${i}">`;
+    tbody+=`<td class="mob-hide" style="color:var(--muted);width:40px">${i+1}</td>`;
+    others.forEach(h=>tbody+=`<td class="mob-hide">${trunc(esc(String(row[h]||'')),30)}</td>`);
+    tbody+=`<td class="url-cell"><div class="mob-trunc-wrap">${trunc(esc(urlVal),50)}</div></td>`;
+
+    if(shortVal.startsWith('ERROR'))
+      tbody+=`<td class="err-cell"><div class="mob-trunc-wrap">${esc(shortVal)}</div></td>`;
+    else if(shortVal)
+      tbody+=`<td class="short-cell"><div class="mob-trunc-wrap">${esc(shortVal)}</div></td>`;
+    else if(!isUrl)
+      tbody+=`<td class="pending-cell"><div class="mob-trunc-wrap">—</div></td>`;
+    else
+      tbody+=`<td class="pending-cell" id="short-${i}"><div class="mob-trunc-wrap">（待轉換）</div></td>`;
+
+    tbody+=`<td style="font-size:11px;color:var(--muted)" id="status-${i}">${statusCell}</td>`;
+    tbody+=`</tr>`;
+  });
+  document.getElementById('rowsBody').innerHTML=tbody;
+}
+
+/* ── Update single row in-place ── */
+function updateRow(i, shortVal, state){
+  const shortCell=document.getElementById(`short-${i}`);
+  const statusCell=document.getElementById(`status-${i}`);
+  if(shortCell){
+    if(state==='converting'){
+      shortCell.innerHTML='<span class="dot-spin"></span>';
+      shortCell.className='pending-cell';
+    } else if(state==='ok'){
+      shortCell.textContent=shortVal;
+      shortCell.className='short-cell';
+      shortCell.removeAttribute('id');
+    } else {
+      shortCell.textContent=shortVal;
+      shortCell.className='err-cell';
+      shortCell.removeAttribute('id');
+    }
+  }
+  if(statusCell){
+    if(state==='converting') statusCell.innerHTML='<span class="dot-spin"></span>轉換中';
+    else if(state==='ok') statusCell.innerHTML='<span class="dot-ok status-dot"></span>完成';
+    else statusCell.innerHTML='<span class="dot-err status-dot"></span>失敗';
+  }
+}
+
+/* ── Convert ── */
+async function startConvert(){
+  const apiKey=document.getElementById('apiKey').value.trim();
+  if(!apiKey){alert('請先填入 API Key');return;}
+  if(currentMode==='url') return startConvertUrl(apiKey);
+  return startConvertExcel(apiKey);
+}
+
+async function startConvertUrl(apiKey){
+  const raw=document.getElementById('urlTextarea').value.trim();
+  if(!raw){alert('請輸入至少一個網址');return;}
+  const urls=raw.split('\n').map(u=>u.trim()).filter(Boolean);
+
+  const btn=document.getElementById('convertBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="dot-spin"></span> 轉換中…';
+
+  // build results table
+  const area=document.getElementById('urlResultsArea');
+  area.innerHTML=`<div class="url-results-wrap"><table>
+    <thead><tr><th style="width:36px">#</th><th style="width:26%">原始網址</th><th>短網址</th><th style="width:64px;white-space:nowrap">狀態</th><th style="width:96px"><button class="copy-all-btn" id="copyAllBtn" onclick="copyAllShortUrls()" style="display:none">全部複製</button></th></tr></thead>
+    <tbody id="urlResultsBody">${urls.map((u,i)=>`<tr id="ur-${i}">
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-family:'Courier New',monospace;color:var(--accent2)">${trunc(esc(u),60)}</td>
+      <td id="urs-${i}" style="color:var(--muted);font-style:italic;font-family:'Courier New',monospace">（待轉換）</td>
+      <td id="urst-${i}" style="font-size:11px;color:var(--muted);white-space:nowrap"><span class="dot-wait status-dot"></span>等待</td>
+      <td id="urcp-${i}"></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+
+  let ok=0,fail=0;
+  for(let i=0;i<urls.length;i++){
+    const url=urls[i];
+    document.getElementById(`urst-${i}`).innerHTML='<span class="dot-spin"></span>轉換中';
+    document.getElementById(`urs-${i}`).innerHTML='<span class="dot-spin"></span>';
+    let result;
+    try{
+      const res=await fetch('https://api.reurl.cc/shorten',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','reurl-api-key':apiKey},
+        body:JSON.stringify({url})
+      });
+      const data=await res.json();
+      result=data.short_url?{ok:true,short:data.short_url}:{ok:false,short:`ERROR: ${data.message||data.error||res.status}`};
+    }catch(e){result={ok:false,short:`ERROR: ${e.message}`};}
+    const sc=document.getElementById(`urs-${i}`);
+    const st=document.getElementById(`urst-${i}`);
+    if(result.ok){
+      sc.textContent=result.short;sc.style.color='var(--success)';sc.style.fontStyle='normal';
+      st.innerHTML='<span class="dot-ok status-dot"></span>完成';
+      incrementKeyCount();
+      const cpCell=document.getElementById(`urcp-${i}`);
+      if(cpCell){
+        const copyBtn=document.createElement('button');
+        copyBtn.className='copy-btn';
+        copyBtn.textContent='複製';
+        copyBtn.addEventListener('click',()=>{
+          navigator.clipboard.writeText(result.short).then(()=>{
+            copyBtn.classList.add('copied');
+            copyBtn.innerHTML=`<span class="check-icon">✓</span><span class="copied-text"> 已複製</span>`;
+            setTimeout(()=>{
+              copyBtn.classList.remove('copied');
+              copyBtn.textContent='複製';
+            },1000);
+          });
+        });
+        cpCell.appendChild(copyBtn);
+      }
+      ok++;
+    }else{
+      sc.textContent=result.short;sc.style.color='var(--error)';sc.style.fontStyle='normal';sc.style.fontFamily='inherit';sc.style.fontSize='11px';
+      st.innerHTML='<span class="dot-err status-dot"></span>失敗';
+      fail++;
+    }
+    document.getElementById('counter').textContent=`${ok} 成功 / ${fail} 失敗`;
+    if(i<urls.length-1)await sleep(300);
+  }
+  btn.disabled=false;
+  btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6-2.686-6-6-6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M5 2L2 5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 執行轉換`;
+  document.getElementById('counter').textContent=`完成：${ok} 成功 / ${fail} 失敗`;
+  if(ok>0){const cab=document.getElementById('copyAllBtn');if(cab)cab.style.display='';}
+}
+
+async function startConvertExcel(apiKey){
+  const urlCol=headers[urlColIdx];
+  const btn=document.getElementById('convertBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="dot-spin"></span> 轉換中…';
+  document.getElementById('saveBtn').disabled=true;
+
+  const pw=document.getElementById('progressWrap');
+  const pb=document.getElementById('progressBar');
+  pw.style.display='block';
+  pb.style.width='0%';
+
+  let ok=0,fail=0,skip=0;
+  for(let i=0;i<jsonData.length;i++){
+    const url=String(jsonData[i][urlCol]||'').trim();
+    if(!url.startsWith('http')){skip++;pb.style.width=((i+1)/jsonData.length*100)+'%';continue;}
+    updateRow(i,'','converting');
+    let result;
+    try{
+      const res=await fetch('https://api.reurl.cc/shorten',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','reurl-api-key':apiKey},
+        body:JSON.stringify({url})
+      });
+      const data=await res.json();
+      result=data.short_url?{ok:true,short:data.short_url}:{ok:false,short:`ERROR: ${data.message||data.error||res.status}`};
+    }catch(e){result={ok:false,short:`ERROR: ${e.message}`};}
+    jsonData[i][shortColName]=result.short;
+    updateRow(i,result.short,result.ok?'ok':'error');
+    if(result.ok){ok++;incrementKeyCount();}else fail++;
+    pb.style.width=((i+1)/jsonData.length*100)+'%';
+    document.getElementById('counter').textContent=`${ok} 成功 / ${fail} 失敗`;
+    if(i<jsonData.length-1)await sleep(300);
+  }
+  btn.disabled=false;
+  btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8c0 3.314 2.686 6 6 6s6-2.686 6-6-2.686-6-6-6" stroke="white" stroke-width="1.8" stroke-linecap="round"/><path d="M5 2L2 5l3 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 執行轉換`;
+  document.getElementById('counter').textContent=`完成：${ok} 成功 / ${fail} 失敗${skip?` / ${skip} 略過`:''}`;
+  document.getElementById('saveBtn').disabled=false;
+  const pw2=document.getElementById('progressWrap');
+  if(pw2){pw2.style.opacity='0';setTimeout(()=>{pw2.style.display='none';pw2.style.opacity='1';},420);}
+}
+
+/* ── Save ── */
+function saveExcel(){
+  if(!wb||!jsonData.length)return;
+  const allHeaders=[...headers];
+  if(!allHeaders.includes(shortColName))allHeaders.push(shortColName);
+  const ws=XLSX.utils.json_to_sheet(jsonData,{header:allHeaders});
+  ws['!cols']=allHeaders.map(h=>{
+    const w=h===shortColName?30:Math.min(60,Math.max(h.length,...jsonData.map(r=>String(r[h]||'').length)))+2;
+    return{wch:w};
+  });
+  wb.Sheets[wsName]=ws;
+  const base=originalFileName.replace(/\.(xlsx|xls|csv)$/i,'');
+  XLSX.writeFile(wb,`${base}_短網址.xlsx`);
+}
+
+/* ── Clear ── */
+function clearFile(){
+  wb=null;wsName='';jsonData=[];headers=[];
+  document.getElementById('dropArea').style.display='block';
+  document.getElementById('dataArea').style.display='none';
+  document.getElementById('convertBtn').disabled=true;
+  document.getElementById('saveBtn').disabled=true;
+  document.getElementById('counter').textContent='';
+  document.getElementById('progressWrap').style.display='none';
+  document.getElementById('progressBar').style.width='0%';
+  fileInput.value='';
+}
+
+function copyAllShortUrls(){
+  const rows=document.querySelectorAll('#urlResultsBody tr');
+  const shorts=[];
+  rows.forEach((_,i)=>{
+    const cell=document.getElementById(`urs-${i}`);
+    if(cell&&cell.textContent.startsWith('https://')) shorts.push(cell.textContent.trim());
+  });
+  if(!shorts.length) return;
+  navigator.clipboard.writeText(shorts.join('\n')).then(()=>{
+    const btn=document.getElementById('copyAllBtn');
+    if(!btn) return;
+    btn.classList.add('copied');
+    btn.innerHTML=`<span class="check-icon">✓</span> <span class="copied-text">已複製</span>`;
+    setTimeout(()=>{
+      btn.classList.remove('copied');
+      btn.textContent='全部複製';
+    },1000);
+  });
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function trunc(s,n){return s.length>n?s.slice(0,n)+'…':s;}
+</script>
+</body>
+</html>
